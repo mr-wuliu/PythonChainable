@@ -6,7 +6,8 @@ pyChainable 是一个 Python 包，允许您创建可链式调用的方法，同
 # 安装
 
 ```
-python setup.py bdist_wheel
+pip install -r requirements.txt
+python -m build
 pip install dist/pyChainable-0.1.0-py3-none-any.whl
 ```
 
