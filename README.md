@@ -1,14 +1,22 @@
-# pyChain
+# pyChainable
 
-pyChain 是一个 Python 包，允许您创建可链式调用的方法，同时保持对原始值的操作能力。
+pyChainable 是一个 Python 包，允许您创建可链式调用的方法，同时保持对原始值的操作能力。
 
 
-# 使用方法
+# 安装
 
 ```
 python setup.py bdist_wheel
-pip install dist/pyChain-0.1.0-py3-none-any.whl
+pip install dist/pyChainable-0.1.0-py3-none-any.whl
 ```
+
+或者
+
+```
+pip install pyChainable
+```
+
+# 使用
 
 ```python
 from pychain import chainable

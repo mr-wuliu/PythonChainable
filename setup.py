@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pyChain",
+    name="pyChainable",
     version="0.1.0",
     author="mr-wuliu",
     author_email="mr_wuliu@foxmail.com",
@@ -13,7 +13,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     platforms=["any"],
 )
 
