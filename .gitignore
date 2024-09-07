@@ -3,3 +3,4 @@ build/
 pyChain.egg-info/
 dist/
 venv/
+.pypirc
