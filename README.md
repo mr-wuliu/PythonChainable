@@ -1,13 +1,13 @@
-# Chainable Result
+# pyChain
 
-Chainable Result 是一个 Python 包，允许您创建可链式调用的方法，同时保持对原始值的操作能力。
+pyChain 是一个 Python 包，允许您创建可链式调用的方法，同时保持对原始值的操作能力。
 
 
 # 使用方法
 
 ```
 python setup.py bdist_wheel
-pip install dist/chainable_result-0.1.0-py3-none-any.whl
+pip install dist/pyChain-0.1.0-py3-none-any.whl
 ```
 
 ```python
