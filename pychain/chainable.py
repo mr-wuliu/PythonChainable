@@ -44,17 +44,3 @@ def chainable(func):
         return ChainableResult(self, result)
 
     return wrapper
-
-
-def make_operator_method(op):
-    def method(self, other):
-        value = object.__getattribute__(self, "_value")
-        instance = object.__getattribute__(self, "_instance")
-        return ChainableResult(instance, op(value, other))
-
-    return method
-
-
-for name, op in operator.__dict__.items():
-    if name.startswith("__") and name.endswith("__") and callable(op):
-        setattr(ChainableResult, name, make_operator_method(op))
