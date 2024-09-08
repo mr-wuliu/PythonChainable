@@ -12,7 +12,7 @@ pyChainable 是一个 Python 包，允许您创建可链式调用的方法，同
 ```
 pip install -r requirements.txt
 python -m build
-pip install dist/pyChainable-0.1.0-py3-none-any.whl
+pip install dist/pyChainable-0.1.1-py3-none-any.whl
 ```
 
 或者

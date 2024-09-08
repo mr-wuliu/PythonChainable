@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyChainable"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="mrwuliu", email="mr_wuliu@foxmail.com" },
 ]
