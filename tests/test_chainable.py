@@ -117,7 +117,6 @@ class TestPipeline(unittest.TestCase):
             @pipeline
             def reflected(self, x, y, z):
                 return -x, -y, -z
-
             @pipeline
             def sum(self, x, y, z):
                 return x + y + z
@@ -127,7 +126,7 @@ class TestPipeline(unittest.TestCase):
                 return -x
 
         p = ChainFunction()
-        result1 = p.normalized(1.0, 2.0, 3.0).reflected().sum()()
+        result1 = p.normalized(1.0, 2.0, 3.0).reflected().sum()
         result2 = p.reflected(1.0, 2.0, 3.0).normalized().sum().negative()
 
         self.assertAlmostEqual(result1, -1.6035674514745464, places=7)
@@ -174,9 +173,36 @@ class TestPipeline(unittest.TestCase):
         test3 = StrTest()
         res3 : str = test3.add("someworld").sp().add().sp(other='why').add()
         self.assertEqual(type(res3), PipelineResult)
-        self.assertEqual(res3,'someworld1,1,1')
+        self.assertEqual(res3,'someworld1,1,why1')
         self.assertEqual(type(res3), PipelineResult)
-        self.assertEqual(res3.split(','), ['someworld1', '1', '1'])
+        self.assertEqual(res3.split(','), ['someworld1', '1', 'why1'])
+    def test_pipeline_4(self):
+        from dataclasses import dataclass
+        
+        @dataclass(slots=True)
+        class TestClass:
+            # 定义旋转矩阵的四个参数
+            a : float
+            b : float
+            c : float
+            d : float
+            # 我们可以定义两个方法 一个用于旋转90度, 一个用于缩放
+            @pipeline
+            def rotate(self, x, y):
+                return (self.a * x + self.b * y, self.c * x + self.d * y)
+            
+            @pipeline
+            def scale(self, x, y, factor: float):
+                return (x * factor, y * factor)
+        # 旋转矩阵的四个参数
+        test = TestClass(0, 1, -1, 0)
 
+        res = test.rotate(2,3).scale(factor=2)
+        self.assertEqual(res, (6, -4))
+
+        res2 = res.scale(factor=1/2)
+        self.assertEqual(res2, (3 , -2))
+        
+    
 if __name__ == "__main__":
     unittest.main()

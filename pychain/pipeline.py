@@ -15,8 +15,8 @@ class PipelineResult(CommonChain):
             attr = getattr(instance, name)
             if callable(attr):
                 if isinstance(value, tuple):
-                    return attr(*value)
-                return attr(value)
+                    return lambda **kwargs : attr(*value, **kwargs)
+                return lambda **kwargs : attr(value, **kwargs)
             return attr
 
         if hasattr(value, name):
@@ -28,7 +28,6 @@ class PipelineResult(CommonChain):
 
     def __call__(self, *args, **kwargs) -> Any:
         return self
-
 def pipeline(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(self, *args, **kwargs) -> PipelineResult:

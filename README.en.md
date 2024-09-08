@@ -1,31 +1,33 @@
 # pyChainable
 
-[中文文档](README.md) | [English Documentation](README.en.md)
+[中文文档](README.md) | [English Documentation](README.md)
 
-pyChainable 是一个 Python 包，允许您创建可链式调用的方法，同时保持对原始值的操作能力。
+**pyChainable** is a Python package that allows you to create chainable method calls while maintaining the ability to operate on the original values.
 
+## Installation
 
-## 安装
+To install, use the following commands:
 
-使用以下命令安装：
-
-```
+```bash
 pip install -r requirements.txt
-python -m build
-pip install dist/pyChainable-0.1.0-py3-none-any.whl
-```
-
-或者
+python -m build 
+pip install dist/<package>.whl
 
 ```
+
+Or install from PyPI:
+
+```bash
 pip install pyChainable
+
 ```
 
-## 使用
 
-### 方法链式调用
+## Usage
 
-@chainable 装饰器允许您创建可链式调用的方法。
+### Method Chaining
+
+The `@chainable` decorator allows you to create methods that can be chained together.
 
 ```python
 from pychain import chainable
@@ -46,10 +48,12 @@ class MyClass:
 obj = MyClass()
 result = obj.add(1).add(2).multiply(3)
 print(result)
-```
-### 函数链式调用
 
-@pipeline 装饰器允许将多个函数数链接在一起，以便在执行时按顺序调用它们。上一个函数的返回值将作为下一个函数的参数。
+```
+
+## Function Chaining
+
+The `@pipeline` decorator allows multiple functions to be chained together, so they are called sequentially, with the return value of one function passed as the argument to the next.
 
 ```python
 class TestClass:
@@ -67,7 +71,9 @@ print(test)
 
 ```
 
-### 字符串操作同样可用
+### String Operations
+
+`@pipeline` can also be used for string operations.
 
 ```python
 
@@ -84,13 +90,12 @@ class StrTest:
 getString = StrTest()
 res3 : str = test3.add("word").sp().add().sp().add()
 print(res3)
-print(res3.split(','))
 
 ```
 
-### 矩阵运算
+### Matrix Operations
 
-`@pipeline` 可以结合`dataclass`使用，以实现矩阵运算的链式调用。
+`@pipeline` also supports other forms of operations, such as matrix transformations.
 
 ```python
 from dataclasses import dataclass
