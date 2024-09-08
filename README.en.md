@@ -1,6 +1,6 @@
 # pyChainable
 
-[中文文档](README.md) | [English Documentation](README.md)
+[中文文档](https://github.com/mr-wuliu/PythonChainable/blob/main/README.md) | [English Documentation](https://github.com/mr-wuliu/PythonChainable/blob/main/README.en.md)
 
 **pyChainable** is a Python package that allows you to create chainable method calls while maintaining the ability to operate on the original values.
 
