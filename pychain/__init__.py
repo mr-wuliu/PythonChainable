@@ -1,6 +1,8 @@
-from .core import ChainableResult, chainable
+from .chainable import chainable
+from .pipeline import pipeline
+
 
 __all__ = [
-    'chainable',
-    ]
+    'chainable', 'pipeline'
+]
 __version__ = '0.1.0'
