@@ -173,6 +173,7 @@ class TestPipeline(unittest.TestCase):
         test3 = StrTest()
         res3 : str = test3.add("someworld").sp().add().sp(other='why').add()
         self.assertEqual(type(res3), PipelineResult)
+        self.assertEqual(isinstance(res3, str), True)
         self.assertEqual(res3,'someworld1,1,why1')
         self.assertEqual(type(res3), PipelineResult)
         self.assertEqual(res3.split(','), ['someworld1', '1', 'why1'])
