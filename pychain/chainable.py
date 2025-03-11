@@ -1,4 +1,3 @@
-import operator
 from functools import wraps
 from typing import Any
 from pychain.common import CommonChain
