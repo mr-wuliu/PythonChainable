@@ -118,11 +118,10 @@ class CommonChain(Generic[T]):
     # -- Functional composition methods --
 
     def map(self, fn: Callable[[T], U]) -> CommonChain[U]:
-        """Transform _value with fn, return new proxy wrapping result."""
         value = object.__getattribute__(self, VALUE)
         result = fn(value)
         instance = object.__getattribute__(self, INSTANCE)
-        return type(self)(instance, result)
+        return type(self)(instance, result)  # pyright: ignore[reportReturnType,reportArgumentType]
 
     def filter(self, fn: Callable[[T], bool]) -> CommonChain[T]:
         """Return self if fn(_value) is truthy, otherwise raise ValueError."""
