@@ -50,7 +50,7 @@ class TestChainable(unittest.TestCase):
         import numpy as np
         from dataclasses import dataclass
 
-        @dataclass(slots=True, frozen=False)
+        @dataclass(slots=True)
         class Vector:
             x: float
             y: float
@@ -80,7 +80,7 @@ class TestChainable(unittest.TestCase):
         import numpy as np
         from dataclasses import dataclass
 
-        @dataclass(slots=True, frozen=False)
+        @dataclass(slots=True)
         class Vector:
             x: float
             y: float
