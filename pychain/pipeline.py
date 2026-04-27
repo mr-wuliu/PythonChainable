@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 from pychain.common import CommonChain
 from pychain.enum import VALUE, INSTANCE
 
-class PipelineResult(CommonChain):
+T = TypeVar("T")
+
+
+class PipelineResult(CommonChain[T]):
 
     def __getattribute__(self, name: str) -> Any:
         if name == "__class__":
@@ -14,8 +19,17 @@ class PipelineResult(CommonChain):
             else:
                 return type(self)
 
-        if name in [INSTANCE, VALUE]:
+        if name in (INSTANCE, VALUE):
             return object.__getattribute__(self, name)
+
+        try:
+            proxy_attr = object.__getattribute__(self, name)
+            if callable(proxy_attr):
+                return proxy_attr
+            return proxy_attr
+        except AttributeError:
+            pass
+
         instance = object.__getattribute__(self, INSTANCE)
         value = object.__getattribute__(self, VALUE)
 
@@ -31,15 +45,16 @@ class PipelineResult(CommonChain):
             attr = getattr(value, name)
             if callable(attr):
                 return lambda *args, **kwargs: attr(*args, **kwargs)
-            return value
+            return attr
         raise AttributeError(name)
 
-    def __call__(self, *args, **kwargs) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> PipelineResult[T]:
         return self
 
-def pipeline(func: Callable) -> Callable:
+
+def pipeline(func: Callable[..., T]) -> Callable[..., PipelineResult[T]]:
     @wraps(func)
-    def wrapper(self, *args, **kwargs) -> PipelineResult:
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> PipelineResult[T]:
         result = func(self, *args, **kwargs)
         return PipelineResult(self, result)
     return wrapper

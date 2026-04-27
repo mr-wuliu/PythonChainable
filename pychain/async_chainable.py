@@ -7,7 +7,10 @@ from pychain.common import CommonChain
 T = TypeVar("T")
 
 
-class ChainableResult(CommonChain[T]):
+class AsyncChainableResult(CommonChain[T]):
+
+    def __init__(self, instance: Any, awaitable_or_value: Any) -> None:
+        super().__init__(instance, awaitable_or_value)
 
     def __getattribute__(self, name: str) -> Any:
         if name in ("_instance", "_value"):
@@ -27,9 +30,14 @@ class ChainableResult(CommonChain[T]):
         if hasattr(instance, name):
             attr = getattr(instance, name)
             if callable(attr):
-                return lambda *args, **kwargs: ChainableResult(
-                    instance, attr(*args, **kwargs)
-                )
+                def method_caller(*args: Any, **kwargs: Any) -> AsyncChainableResult[Any]:
+                    async def async_step() -> Any:
+                        await value
+                        inner = attr(*args, **kwargs)
+                        inner_value = object.__getattribute__(inner, "_value")
+                        return await inner_value
+                    return AsyncChainableResult(instance, async_step())
+                return method_caller
             return attr
 
         if hasattr(value, name):
@@ -42,6 +50,9 @@ class ChainableResult(CommonChain[T]):
             f"'{type(self).__name__}' object has no attribute '{name}'"
         )
 
+    def __await__(self):
+        return object.__getattribute__(self, "_value").__await__()
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if callable(object.__getattribute__(self, "_value")):
             return object.__getattribute__(self, "_value")(*args, **kwargs)
@@ -50,9 +61,9 @@ class ChainableResult(CommonChain[T]):
         )
 
 
-def chainable(func: Callable[..., T]) -> Callable[..., ChainableResult[T]]:
+def async_chainable(func: Callable[..., Any]) -> Callable[..., AsyncChainableResult[Any]]:
     @wraps(func)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> ChainableResult[T]:
-        result = func(self, *args, **kwargs)
-        return ChainableResult(self, result)
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> AsyncChainableResult[Any]:
+        coro = func(self, *args, **kwargs)
+        return AsyncChainableResult(self, coro)
     return wrapper
