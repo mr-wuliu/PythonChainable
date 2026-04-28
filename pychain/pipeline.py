@@ -39,8 +39,8 @@ class PipelineResult(CommonChain[T]):
             attr = getattr(instance, name)
             if callable(attr):
                 if isinstance(value, tuple):
-                    return lambda **kwargs: attr(*value, **kwargs)
-                return lambda **kwargs: attr(value, **kwargs)
+                    return lambda *args, **kwargs: attr(*value, *args, **kwargs)
+                return lambda *args, **kwargs: attr(value, *args, **kwargs)
             return attr
 
         if hasattr(value, name):

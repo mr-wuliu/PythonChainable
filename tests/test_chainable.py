@@ -467,6 +467,135 @@ class TestAsyncChainable(unittest.TestCase):
         asyncio.run(run())
 
 
+class TestAsyncChainableFunctional(unittest.TestCase):
+    def test_async_chainable_map(self):
+        import asyncio
+        from pychain.async_chainable import AsyncChainableResult
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).map(lambda x: x * 2)
+            self.assertIsInstance(result, AsyncChainableResult)
+            val = await result
+            self.assertEqual(val, 30)
+
+        asyncio.run(run())
+
+    def test_async_chainable_filter_pass(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).filter(lambda x: x > 0)
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_filter_fail(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            with self.assertRaises(ValueError):
+                await calc.add(5).filter(lambda x: x < 0)
+
+        asyncio.run(run())
+
+    def test_async_chainable_flat_map(self):
+        import asyncio
+        from pychain.async_chainable import AsyncChainableResult
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).flat_map(lambda x: x * 10)
+            self.assertIsInstance(result, AsyncChainableResult)
+            val = await result
+            self.assertEqual(val, 150)
+
+        asyncio.run(run())
+
+    def test_async_chainable_inspect(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            collected = []
+            calc = AsyncCalc()
+            result = calc.add(5).inspect(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [15])
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_tap(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            collected = []
+            calc = AsyncCalc()
+            result = calc.add(5).tap(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [15])
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_combined_functional_chain(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            log = []
+            calc = AsyncCalc()
+            result = (
+                calc.add(5)
+                .map(lambda x: x * 2)
+                .inspect(lambda x: log.append(x))
+                .filter(lambda x: x > 0)
+                .map(lambda x: x + 1)
+            )
+            val = await result
+            self.assertEqual(log, [30])
+            self.assertEqual(val, 31)
+
+        asyncio.run(run())
+
+
 class TestAsyncPipeline(unittest.TestCase):
     def test_basic_async_pipeline(self):
         import asyncio
@@ -529,6 +658,289 @@ class TestAsyncPipeline(unittest.TestCase):
             self.assertEqual(val, 15)
 
         asyncio.run(run())
+
+
+class TestAsyncPipelineFunctional(unittest.TestCase):
+    def test_async_pipeline_map(self):
+        import asyncio
+        from pychain.async_pipeline import AsyncPipelineResult
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).map(lambda x: x + 1)
+            self.assertIsInstance(result, AsyncPipelineResult)
+            val = await result
+            self.assertEqual(val, 11)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_filter_pass(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).filter(lambda x: x > 0)
+            val = await result
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_filter_fail(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            with self.assertRaises(ValueError):
+                await pipe.double(5).filter(lambda x: x < 0)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_flat_map(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).flat_map(lambda x: [x, x + 1])
+            val = await result
+            self.assertEqual(val, [10, 11])
+
+        asyncio.run(run())
+
+    def test_async_pipeline_inspect(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            collected = []
+            pipe = AsyncPipe()
+            result = pipe.double(5).inspect(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [10])
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_tap(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            collected = []
+            pipe = AsyncPipe()
+            result = pipe.double(5).tap(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [10])
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_combined_functional_chain(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def increment(self, x):
+                return x + 1
+
+            @pipeline
+            async def negate(self, x):
+                return -x
+
+        async def run():
+            log = []
+            pipe = AsyncPipe()
+            result = (
+                pipe.increment(10)
+                .map(lambda x: x * 2)
+                .inspect(lambda x: log.append(x))
+                .filter(lambda x: x > 0)
+                .negate()
+            )
+            val = await result
+            self.assertEqual(log, [22])
+            self.assertEqual(val, -22)
+
+        asyncio.run(run())
+
+
+class TestPositionalArgPipeline(unittest.TestCase):
+    """Regression tests for positional args during chained pipeline calls."""
+
+    def test_sync_pipeline_positional_args(self):
+        class Pipe:
+            @pipeline
+            def add(self, x: int, y: int) -> int:
+                return x + y
+
+            @pipeline
+            def multiply(self, x: int, factor: int) -> int:
+                return x * factor
+
+        p = Pipe()
+        # Previous value (3) auto-injected as first arg; 5 passed as positional extra
+        result = p.add(1, 2).multiply(5)
+        self.assertEqual(int(result), 15)
+
+    def test_sync_pipeline_positional_args_with_kwargs(self):
+        class Pipe:
+            @pipeline
+            def split(self, x: int) -> tuple:
+                return (x, x + 1)
+
+            @pipeline
+            def combine(self, a: int, b: int, extra: int = 0) -> int:
+                return a + b + extra
+
+        p = Pipe()
+        # Tuple (5, 6) unpacked as (a, b), then extra=10 via kwarg
+        result = p.split(5).combine(extra=10)
+        self.assertEqual(int(result), 21)
+
+    def test_sync_pipeline_positional_args_tuple_unpack(self):
+        class Pipe:
+            @pipeline
+            def pair(self, x: int) -> tuple:
+                return (x, x * 2)
+
+            @pipeline
+            def sum_with_extra(self, a: int, b: int, extra: int) -> int:
+                return a + b + extra
+
+        p = Pipe()
+        # Tuple (3, 6) unpacked as (a, b), then 100 as positional extra
+        result = p.pair(3).sum_with_extra(100)
+        self.assertEqual(int(result), 109)
+
+    def test_async_pipeline_positional_args(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def add(self, x: int, y: int) -> int:
+                return x + y
+
+            @pipeline
+            async def multiply(self, x: int, factor: int) -> int:
+                return x * factor
+
+        async def run():
+            p = AsyncPipe()
+            result = p.add(1, 2).multiply(5)
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_positional_args_tuple_unpack(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def pair(self, x: int):
+                return (x, x * 2)
+
+            @pipeline
+            async def sum_with_extra(self, a, b, extra):
+                return a + b + extra
+
+        async def run():
+            p = AsyncPipe()
+            result = p.pair(3).sum_with_extra(100)
+            val = await result
+            self.assertEqual(val, 109)
+
+        asyncio.run(run())
+
+
+class TestClassBehavior(unittest.TestCase):
+    """Regression tests for __class__ proxy behavior in pipeline results."""
+
+    def test_sync_pipeline_class_returns_value_type(self):
+        from pychain.pipeline import PipelineResult
+
+        class Pipe:
+            @pipeline
+            def double(self, x: int) -> int:
+                return x * 2
+
+        p = Pipe()
+        result = p.double(5)
+        # __class__ should return the wrapped value's type (int)
+        self.assertEqual(result.__class__, int)
+        # type() bypasses __getattribute__ and returns PipelineResult
+        self.assertEqual(type(result), PipelineResult)
+
+    def test_sync_pipeline_class_with_string_value(self):
+        from pychain.pipeline import PipelineResult
+
+        class StrPipe:
+            @pipeline
+            def upper(self, s: str) -> str:
+                return s.upper()
+
+        p = StrPipe()
+        result = p.upper("hello")
+        self.assertEqual(result.__class__, str)
+        self.assertEqual(type(result), PipelineResult)
+
+    def test_async_pipeline_class_returns_value_type(self):
+        from pychain.async_pipeline import AsyncPipelineResult
+        from pychain.enum import VALUE
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x: int) -> int:
+                return x * 2
+
+        p = AsyncPipe()
+        result = p.double(5)
+        # __class__ follows same logic as sync: returns type of _value (coroutine)
+        # since _value is a coroutine (truthy), __class__ returns coroutine type
+        self.assertNotEqual(result.__class__, AsyncPipelineResult)
+        # type() bypasses __getattribute__ and returns AsyncPipelineResult
+        self.assertEqual(type(result), AsyncPipelineResult)
+        object.__getattribute__(result, VALUE).close()
+
+    def test_sync_pipeline_class_falsy_value(self):
+        from pychain.pipeline import PipelineResult
+
+        class Pipe:
+            @pipeline
+            def zero(self, x: int) -> int:
+                return 0
+
+        p = Pipe()
+        result = p.zero(5)
+        # value is 0 (falsy), so __class__ falls through to instance type
+        self.assertEqual(result.__class__, Pipe)
 
 
 if __name__ == "__main__":

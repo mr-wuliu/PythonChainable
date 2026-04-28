@@ -53,6 +53,64 @@ class AsyncChainableResult(CommonChain[T]):
     def __await__(self):
         return object.__getattribute__(self, "_value").__await__()
 
+    # -- Async-aware functional composition overrides --
+    # These override CommonChain methods so that _value (a coroutine) is
+    # awaited before the transformation is applied.
+
+    def map(self, fn: Callable[[Any], Any]) -> AsyncChainableResult[Any]:
+        prev_value = object.__getattribute__(self, "_value")
+        instance = object.__getattribute__(self, "_instance")
+
+        async def _async_map() -> Any:
+            resolved = await prev_value
+            return fn(resolved)
+
+        return AsyncChainableResult(instance, _async_map())
+
+    def filter(self, fn: Callable[[Any], bool]) -> AsyncChainableResult[Any]:
+        prev_value = object.__getattribute__(self, "_value")
+        instance = object.__getattribute__(self, "_instance")
+
+        async def _async_filter() -> Any:
+            resolved = await prev_value
+            if not fn(resolved):
+                raise ValueError(
+                    f"Filter predicate returned False for {resolved!r}"
+                )
+            return resolved
+
+        return AsyncChainableResult(instance, _async_filter())
+
+    def flat_map(self, fn: Callable[[Any], Any]) -> AsyncChainableResult[Any]:
+        """Async version: awaits _value, applies fn, returns async proxy.
+
+        Unlike the sync CommonChain.flat_map which returns the raw unwrapped
+        value, the async version must return an AsyncChainableResult because
+        the result cannot be produced synchronously.
+        """
+        prev_value = object.__getattribute__(self, "_value")
+        instance = object.__getattribute__(self, "_instance")
+
+        async def _async_flat_map() -> Any:
+            resolved = await prev_value
+            return fn(resolved)
+
+        return AsyncChainableResult(instance, _async_flat_map())
+
+    def inspect(self, fn: Callable[[Any], None]) -> AsyncChainableResult[Any]:
+        prev_value = object.__getattribute__(self, "_value")
+        instance = object.__getattribute__(self, "_instance")
+
+        async def _async_inspect() -> Any:
+            resolved = await prev_value
+            fn(resolved)
+            return resolved
+
+        return AsyncChainableResult(instance, _async_inspect())
+
+    def tap(self, fn: Callable[[Any], None]) -> AsyncChainableResult[Any]:
+        return self.inspect(fn)
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if callable(object.__getattribute__(self, "_value")):
             return object.__getattribute__(self, "_value")(*args, **kwargs)
