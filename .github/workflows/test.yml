@@ -28,7 +28,7 @@ jobs:
           pip install pytest pytest-cov numpy
 
       - name: Run tests with coverage (>=50%)
-        run: pytest --cov=pychain --cov-fail-under=50 --cov-report=term-missing -v tests/test_chainable.py
+        run: pytest --cov=pychain --cov-fail-under=50 --cov-report=term-missing -v tests/
 
       - name: Type check with basedpyright
         run: |
