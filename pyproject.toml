@@ -25,3 +25,16 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/mr-wuliu/PythonChainable"
 Issues = "https://github.com/mr-wuliu/PythonChainable/issues"
+
+[tool.basedpyright]
+pythonVersion = "3.10"
+pythonPlatform = "All"
+typeCheckingMode = "strict"
+# Proxy pattern legitimately uses Any
+reportAny = "none"
+reportExplicitAny = "none"
+# Many intentional dunder overrides in proxy classes
+reportImplicitOverride = "none"
+# Lambda params in proxy forwarding are inherently unknown
+reportUnknownLambdaType = "none"
+reportUnknownVariableType = "none"

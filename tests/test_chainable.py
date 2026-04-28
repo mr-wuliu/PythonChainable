@@ -204,6 +204,830 @@ class TestPipeline(unittest.TestCase):
         res2 = res.scale(factor=1/2)
         self.assertEqual(res2, (3 , -2))
         
-    
+
+
+class TestCommonChain(unittest.TestCase):
+    def test_str(self):
+        from pychain.common import CommonChain
+        proxy = CommonChain("instance", 42)
+        self.assertEqual(str(proxy), "42")
+
+    def test_repr(self):
+        from pychain.common import CommonChain
+        proxy = CommonChain("instance", "hello")
+        self.assertEqual(repr(proxy), "'hello'")
+
+    def test_int(self):
+        from pychain.common import CommonChain
+        proxy = CommonChain("instance", 7)
+        self.assertEqual(int(proxy), 7)
+
+    def test_float(self):
+        from pychain.common import CommonChain
+        proxy = CommonChain("instance", 3.14)
+        self.assertAlmostEqual(float(proxy), 3.14)
+
+    def test_bool(self):
+        from pychain.common import CommonChain
+        self.assertTrue(bool(CommonChain("i", 1)))
+        self.assertTrue(bool(CommonChain("i", "nonempty")))
+        self.assertFalse(bool(CommonChain("i", 0)))
+        self.assertFalse(bool(CommonChain("i", "")))
+
+    def test_index(self):
+        from pychain.common import CommonChain
+        proxy = CommonChain("instance", 5)
+        self.assertEqual([0, 1, 2, 3, 4, 5][proxy], 5)
+
+    def test_arithmetic(self):
+        from pychain.common import CommonChain
+        p = CommonChain("i", 10)
+        self.assertEqual(p + 5, 15)
+        self.assertEqual(p - 3, 7)
+        self.assertEqual(p * 2, 20)
+        self.assertEqual(p / 4, 2.5)
+        self.assertEqual(p // 3, 3)
+        self.assertEqual(p % 3, 1)
+        self.assertEqual(p ** 2, 100)
+
+    def test_reverse_arithmetic(self):
+        from pychain.common import CommonChain
+        p = CommonChain("i", 10)
+        self.assertEqual(5 + p, 15)
+        self.assertEqual(20 - p, 10)
+        self.assertEqual(3 * p, 30)
+        self.assertEqual(100 / p, 10.0)
+        self.assertEqual(23 // p, 2)
+        self.assertEqual(23 % p, 3)
+        self.assertEqual(2 ** p, 1024)
+
+    def test_matmul(self):
+        import numpy as np
+        from pychain.common import CommonChain
+        a = np.array([[1, 2]])
+        b = np.array([[3], [4]])
+        p = CommonChain("i", a)
+        result = p @ b
+        expected = a @ b
+        self.assertTrue(np.array_equal(result, expected))
+
+    def test_unary(self):
+        from pychain.common import CommonChain
+        p = CommonChain("i", 5)
+        self.assertEqual(-p, -5)
+        self.assertEqual(+p, 5)
+        self.assertEqual(abs(CommonChain("i", -7)), 7)
+        self.assertEqual(~CommonChain("i", 0), -1)
+
+    def test_comparison(self):
+        from pychain.common import CommonChain
+        p = CommonChain("i", 10)
+        self.assertTrue(p == 10)
+        self.assertTrue(p != 11)
+        self.assertTrue(p > 5)
+        self.assertTrue(p < 20)
+        self.assertTrue(p >= 10)
+        self.assertTrue(p <= 10)
+        self.assertFalse(p > 15)
+
+    def test_dir(self):
+        from pychain.common import CommonChain
+        d = dir(CommonChain("instance_obj", 42))
+        self.assertIsInstance(d, list)
+        self.assertIn("__class__", d)
+
+
+class TestFunctionalComposition(unittest.TestCase):
+    def test_map(self):
+        from pychain.chainable import ChainableResult, chainable
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        result = calc.add(3, 4).map(lambda x: x * 2)
+        self.assertEqual(int(result), 14)
+
+    def test_filter_pass(self):
+        from pychain.chainable import ChainableResult, chainable
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        result = calc.add(3, 4).filter(lambda x: x > 0)
+        self.assertEqual(int(result), 7)
+
+    def test_filter_fail(self):
+        from pychain.chainable import chainable
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        with self.assertRaises(ValueError):
+            calc.add(3, 4).filter(lambda x: x < 0)
+
+    def test_flat_map(self):
+        from pychain.chainable import chainable
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        result = calc.add(3, 4).flat_map(lambda x: x * 10)
+        self.assertEqual(result, 70)
+        self.assertNotIsInstance(result, type(calc.add(1, 2)))
+
+    def test_inspect(self):
+        from pychain.chainable import chainable
+        collected = []
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        result = calc.add(3, 4).inspect(lambda x: collected.append(x))
+        self.assertEqual(collected, [7])
+        self.assertEqual(int(result), 7)
+
+    def test_tap(self):
+        from pychain.chainable import chainable
+        collected = []
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+        calc = Calc()
+        result = calc.add(3, 4).tap(lambda x: collected.append(x))
+        self.assertEqual(collected, [7])
+        self.assertEqual(int(result), 7)
+
+    def test_chain_functional_methods(self):
+        from pychain.chainable import chainable
+        log = []
+
+        class Calc:
+            @chainable
+            def add(self, a, b):
+                return a + b
+
+            @chainable
+            def multiply(self, a, b):
+                return a * b
+
+        calc = Calc()
+        result = (
+            calc.add(2, 3)
+            .map(lambda x: x + 1)
+            .inspect(lambda x: log.append(x))
+            .filter(lambda x: x > 0)
+            .map(lambda x: x * 2)
+        )
+        self.assertEqual(log, [6])
+        self.assertEqual(int(result), 12)
+
+    def test_pipeline_functional_methods(self):
+        from pychain.pipeline import pipeline
+
+        class Calc:
+            @pipeline
+            def double(self, x):
+                return x * 2
+
+        calc = Calc()
+        result = calc.double(5).map(lambda x: x + 1)
+        self.assertEqual(int(result), 11)
+
+
+class TestAsyncChainable(unittest.TestCase):
+    def test_basic_async_chain(self):
+        import asyncio
+        from pychain.async_chainable import AsyncChainableResult
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5)
+            self.assertIsInstance(result, AsyncChainableResult)
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_await_final_result(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def multiply(self, x):
+                return x * 3
+
+        async def run():
+            calc = AsyncCalc()
+            val = await calc.multiply(4)
+            self.assertEqual(val, 12)
+
+        asyncio.run(run())
+
+    def test_multi_step_chain(self):
+        import asyncio
+
+        class AsyncCalc:
+            def __init__(self):
+                self.value = 0
+
+            @chainable
+            async def add(self, x):
+                self.value += x
+                return self.value
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(3).add(5)
+            val = await result
+            self.assertEqual(val, 8)
+
+        asyncio.run(run())
+
+
+class TestAsyncChainableFunctional(unittest.TestCase):
+    def test_async_chainable_map(self):
+        import asyncio
+        from pychain.async_chainable import AsyncChainableResult
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).map(lambda x: x * 2)
+            self.assertIsInstance(result, AsyncChainableResult)
+            val = await result
+            self.assertEqual(val, 30)
+
+        asyncio.run(run())
+
+    def test_async_chainable_filter_pass(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).filter(lambda x: x > 0)
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_filter_fail(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            with self.assertRaises(ValueError):
+                await calc.add(5).filter(lambda x: x < 0)
+
+        asyncio.run(run())
+
+    def test_async_chainable_flat_map(self):
+        import asyncio
+        from pychain.async_chainable import AsyncChainableResult
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            calc = AsyncCalc()
+            result = calc.add(5).flat_map(lambda x: x * 10)
+            self.assertIsInstance(result, AsyncChainableResult)
+            val = await result
+            self.assertEqual(val, 150)
+
+        asyncio.run(run())
+
+    def test_async_chainable_inspect(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            collected = []
+            calc = AsyncCalc()
+            result = calc.add(5).inspect(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [15])
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_tap(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            collected = []
+            calc = AsyncCalc()
+            result = calc.add(5).tap(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [15])
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_chainable_combined_functional_chain(self):
+        import asyncio
+
+        class AsyncCalc:
+            @chainable
+            async def add(self, x):
+                return x + 10
+
+        async def run():
+            log = []
+            calc = AsyncCalc()
+            result = (
+                calc.add(5)
+                .map(lambda x: x * 2)
+                .inspect(lambda x: log.append(x))
+                .filter(lambda x: x > 0)
+                .map(lambda x: x + 1)
+            )
+            val = await result
+            self.assertEqual(log, [30])
+            self.assertEqual(val, 31)
+
+        asyncio.run(run())
+
+
+class TestAsyncPipeline(unittest.TestCase):
+    def test_basic_async_pipeline(self):
+        import asyncio
+        from pychain.async_pipeline import AsyncPipelineResult
+
+        class AsyncPipe:
+            @pipeline
+            async def add_one(self, x):
+                return x + 1
+
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.add_one(5)
+            self.assertIsInstance(result, AsyncPipelineResult)
+            val = await result
+            self.assertEqual(val, 6)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_chaining(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def increment(self, x):
+                return x + 1
+
+            @pipeline
+            async def negate(self, x):
+                return -x
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.increment(10).negate()
+            val = await result
+            self.assertEqual(val, -11)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_tuple_unpacking(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def split(self, x):
+                return (x, x * 2)
+
+            @pipeline
+            async def sum_pair(self, a, b):
+                return a + b
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.split(5).sum_pair()
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+
+class TestAsyncPipelineFunctional(unittest.TestCase):
+    def test_async_pipeline_map(self):
+        import asyncio
+        from pychain.async_pipeline import AsyncPipelineResult
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).map(lambda x: x + 1)
+            self.assertIsInstance(result, AsyncPipelineResult)
+            val = await result
+            self.assertEqual(val, 11)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_filter_pass(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).filter(lambda x: x > 0)
+            val = await result
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_filter_fail(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            with self.assertRaises(ValueError):
+                await pipe.double(5).filter(lambda x: x < 0)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_flat_map(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = AsyncPipe()
+            result = pipe.double(5).flat_map(lambda x: [x, x + 1])
+            val = await result
+            self.assertEqual(val, [10, 11])
+
+        asyncio.run(run())
+
+    def test_async_pipeline_inspect(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            collected = []
+            pipe = AsyncPipe()
+            result = pipe.double(5).inspect(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [10])
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_tap(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x):
+                return x * 2
+
+        async def run():
+            collected = []
+            pipe = AsyncPipe()
+            result = pipe.double(5).tap(lambda x: collected.append(x))
+            val = await result
+            self.assertEqual(collected, [10])
+            self.assertEqual(val, 10)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_combined_functional_chain(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def increment(self, x):
+                return x + 1
+
+            @pipeline
+            async def negate(self, x):
+                return -x
+
+        async def run():
+            log = []
+            pipe = AsyncPipe()
+            result = (
+                pipe.increment(10)
+                .map(lambda x: x * 2)
+                .inspect(lambda x: log.append(x))
+                .filter(lambda x: x > 0)
+                .negate()
+            )
+            val = await result
+            self.assertEqual(log, [22])
+            self.assertEqual(val, -22)
+
+        asyncio.run(run())
+
+
+class TestPositionalArgPipeline(unittest.TestCase):
+    """Regression tests for positional args during chained pipeline calls."""
+
+    def test_sync_pipeline_positional_args(self):
+        class Pipe:
+            @pipeline
+            def add(self, x: int, y: int) -> int:
+                return x + y
+
+            @pipeline
+            def multiply(self, x: int, factor: int) -> int:
+                return x * factor
+
+        p = Pipe()
+        # Previous value (3) auto-injected as first arg; 5 passed as positional extra
+        result = p.add(1, 2).multiply(5)
+        self.assertEqual(int(result), 15)
+
+    def test_sync_pipeline_positional_args_with_kwargs(self):
+        class Pipe:
+            @pipeline
+            def split(self, x: int) -> tuple:
+                return (x, x + 1)
+
+            @pipeline
+            def combine(self, a: int, b: int, extra: int = 0) -> int:
+                return a + b + extra
+
+        p = Pipe()
+        # Tuple (5, 6) unpacked as (a, b), then extra=10 via kwarg
+        result = p.split(5).combine(extra=10)
+        self.assertEqual(int(result), 21)
+
+    def test_sync_pipeline_positional_args_tuple_unpack(self):
+        class Pipe:
+            @pipeline
+            def pair(self, x: int) -> tuple:
+                return (x, x * 2)
+
+            @pipeline
+            def sum_with_extra(self, a: int, b: int, extra: int) -> int:
+                return a + b + extra
+
+        p = Pipe()
+        # Tuple (3, 6) unpacked as (a, b), then 100 as positional extra
+        result = p.pair(3).sum_with_extra(100)
+        self.assertEqual(int(result), 109)
+
+    def test_async_pipeline_positional_args(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def add(self, x: int, y: int) -> int:
+                return x + y
+
+            @pipeline
+            async def multiply(self, x: int, factor: int) -> int:
+                return x * factor
+
+        async def run():
+            p = AsyncPipe()
+            result = p.add(1, 2).multiply(5)
+            val = await result
+            self.assertEqual(val, 15)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_positional_args_tuple_unpack(self):
+        import asyncio
+
+        class AsyncPipe:
+            @pipeline
+            async def pair(self, x: int):
+                return (x, x * 2)
+
+            @pipeline
+            async def sum_with_extra(self, a, b, extra):
+                return a + b + extra
+
+        async def run():
+            p = AsyncPipe()
+            result = p.pair(3).sum_with_extra(100)
+            val = await result
+            self.assertEqual(val, 109)
+
+        asyncio.run(run())
+
+
+class TestClassBehavior(unittest.TestCase):
+    """Regression tests for __class__ proxy behavior in pipeline results."""
+
+    def test_sync_pipeline_class_returns_value_type(self):
+        from pychain.pipeline import PipelineResult
+
+        class Pipe:
+            @pipeline
+            def double(self, x: int) -> int:
+                return x * 2
+
+        p = Pipe()
+        result = p.double(5)
+        # __class__ should return the wrapped value's type (int)
+        self.assertEqual(result.__class__, int)
+        # type() bypasses __getattribute__ and returns PipelineResult
+        self.assertEqual(type(result), PipelineResult)
+
+    def test_sync_pipeline_class_with_string_value(self):
+        from pychain.pipeline import PipelineResult
+
+        class StrPipe:
+            @pipeline
+            def upper(self, s: str) -> str:
+                return s.upper()
+
+        p = StrPipe()
+        result = p.upper("hello")
+        self.assertEqual(result.__class__, str)
+        self.assertEqual(type(result), PipelineResult)
+
+    def test_async_pipeline_class_returns_value_type(self):
+        from pychain.async_pipeline import AsyncPipelineResult
+        from pychain.enum import VALUE
+
+        class AsyncPipe:
+            @pipeline
+            async def double(self, x: int) -> int:
+                return x * 2
+
+        p = AsyncPipe()
+        result = p.double(5)
+        # __class__ follows same logic as sync: returns type of _value (coroutine)
+        # since _value is a coroutine (truthy), __class__ returns coroutine type
+        self.assertNotEqual(result.__class__, AsyncPipelineResult)
+        # type() bypasses __getattribute__ and returns AsyncPipelineResult
+        self.assertEqual(type(result), AsyncPipelineResult)
+        object.__getattribute__(result, VALUE).close()
+
+    def test_sync_pipeline_class_falsy_value(self):
+        from pychain.pipeline import PipelineResult
+
+        class Pipe:
+            @pipeline
+            def zero(self, x: int) -> int:
+                return 0
+
+        p = Pipe()
+        result = p.zero(5)
+        # value is 0 (falsy), so __class__ falls through to instance type
+        self.assertEqual(result.__class__, Pipe)
+
+
+class TestMixedAsyncSyncChaining(unittest.TestCase):
+    """Regression tests for mixed async/sync chained method calls."""
+
+    def test_async_pipeline_then_sync_pipeline(self):
+        import asyncio
+
+        class MixedPipe:
+            @pipeline
+            async def start(self, x):
+                return x + 1
+
+            @pipeline
+            def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = MixedPipe()
+            val = await pipe.start(1).double()
+            self.assertEqual(val, 4)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_then_sync_pipeline_with_args(self):
+        import asyncio
+
+        class MixedPipe:
+            @pipeline
+            async def start(self, x):
+                return x + 1
+
+            @pipeline
+            def multiply(self, x, factor):
+                return x * factor
+
+        async def run():
+            pipe = MixedPipe()
+            val = await pipe.start(3).multiply(factor=5)
+            self.assertEqual(val, 20)
+
+        asyncio.run(run())
+
+    def test_async_chainable_then_sync_chainable(self):
+        import asyncio
+
+        class MixedCalc:
+            @chainable
+            async def compute(self, x):
+                return x + 10
+
+            @chainable
+            def transform(self, x):
+                return x * 2
+
+        async def run():
+            calc = MixedCalc()
+            partial = calc.compute(5)
+            transformed = partial.transform(15)
+            val = await transformed
+            self.assertEqual(val, 30)
+
+        asyncio.run(run())
+
+    def test_sync_then_async_then_sync_pipeline(self):
+        import asyncio
+
+        class MultiPipe:
+            @pipeline
+            def step_one(self, x):
+                return x + 1
+
+            @pipeline
+            async def step_two(self, x):
+                return x * 3
+
+            @pipeline
+            def step_three(self, x):
+                return x - 2
+
+        async def run():
+            pipe = MultiPipe()
+            val = await pipe.step_one(4).step_two().step_three()
+            self.assertEqual(val, 13)
+
+        asyncio.run(run())
+
+
 if __name__ == "__main__":
     unittest.main()

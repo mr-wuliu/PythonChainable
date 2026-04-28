@@ -29,3 +29,8 @@ jobs:
 
       - name: Run tests with coverage (>=50%)
         run: pytest --cov=pychain --cov-fail-under=50 --cov-report=term-missing -v tests/
+
+      - name: Type check with basedpyright
+        run: |
+          pip install basedpyright
+          basedpyright pychain/ tests/test_types.py
