@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import inspect
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Awaitable, Callable, TypeVar, overload
+from pychain.async_chainable import AsyncChainableResult
 from pychain.common import CommonChain
 
 T = TypeVar("T")
@@ -50,9 +52,17 @@ class ChainableResult(CommonChain[T]):
         )
 
 
-def chainable(func: Callable[..., T]) -> Callable[..., ChainableResult[T]]:
+@overload
+def chainable(func: Callable[..., Awaitable[T]]) -> Callable[..., AsyncChainableResult[T]]: ...  # pyright: ignore[reportOverlappingOverload]
+
+@overload
+def chainable(func: Callable[..., T]) -> Callable[..., ChainableResult[T]]: ...
+
+def chainable(func: Callable[..., Any]) -> Callable[..., ChainableResult[Any] | AsyncChainableResult[Any]]:
     @wraps(func)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> ChainableResult[T]:
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> ChainableResult[Any] | AsyncChainableResult[Any]:
         result = func(self, *args, **kwargs)
+        if inspect.iscoroutine(result):
+            return AsyncChainableResult(self, result)
         return ChainableResult(self, result)
     return wrapper

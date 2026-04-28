@@ -415,10 +415,10 @@ class TestFunctionalComposition(unittest.TestCase):
 class TestAsyncChainable(unittest.TestCase):
     def test_basic_async_chain(self):
         import asyncio
-        from pychain.async_chainable import async_chainable, AsyncChainableResult
+        from pychain.async_chainable import AsyncChainableResult
 
         class AsyncCalc:
-            @async_chainable
+            @chainable
             async def add(self, x):
                 return x + 10
 
@@ -433,10 +433,9 @@ class TestAsyncChainable(unittest.TestCase):
 
     def test_await_final_result(self):
         import asyncio
-        from pychain.async_chainable import async_chainable
 
         class AsyncCalc:
-            @async_chainable
+            @chainable
             async def multiply(self, x):
                 return x * 3
 
@@ -449,13 +448,12 @@ class TestAsyncChainable(unittest.TestCase):
 
     def test_multi_step_chain(self):
         import asyncio
-        from pychain.async_chainable import async_chainable
 
         class AsyncCalc:
             def __init__(self):
                 self.value = 0
 
-            @async_chainable
+            @chainable
             async def add(self, x):
                 self.value += x
                 return self.value
@@ -472,14 +470,14 @@ class TestAsyncChainable(unittest.TestCase):
 class TestAsyncPipeline(unittest.TestCase):
     def test_basic_async_pipeline(self):
         import asyncio
-        from pychain.async_pipeline import async_pipeline, AsyncPipelineResult
+        from pychain.async_pipeline import AsyncPipelineResult
 
         class AsyncPipe:
-            @async_pipeline
+            @pipeline
             async def add_one(self, x):
                 return x + 1
 
-            @async_pipeline
+            @pipeline
             async def double(self, x):
                 return x * 2
 
@@ -494,14 +492,13 @@ class TestAsyncPipeline(unittest.TestCase):
 
     def test_async_pipeline_chaining(self):
         import asyncio
-        from pychain.async_pipeline import async_pipeline
 
         class AsyncPipe:
-            @async_pipeline
+            @pipeline
             async def increment(self, x):
                 return x + 1
 
-            @async_pipeline
+            @pipeline
             async def negate(self, x):
                 return -x
 
@@ -515,14 +512,13 @@ class TestAsyncPipeline(unittest.TestCase):
 
     def test_async_pipeline_tuple_unpacking(self):
         import asyncio
-        from pychain.async_pipeline import async_pipeline
 
         class AsyncPipe:
-            @async_pipeline
+            @pipeline
             async def split(self, x):
                 return (x, x * 2)
 
-            @async_pipeline
+            @pipeline
             async def sum_pair(self, a, b):
                 return a + b
 

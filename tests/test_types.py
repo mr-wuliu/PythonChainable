@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pychain import async_chainable, async_pipeline, chainable, pipeline
+from pychain import chainable, pipeline
 from pychain.async_chainable import AsyncChainableResult
 from pychain.async_pipeline import AsyncPipelineResult
 from pychain.chainable import ChainableResult
@@ -42,14 +42,14 @@ if TYPE_CHECKING:
     str_result: str = str(proxy)
 
     class AsyncCalc:
-        @async_chainable
+        @chainable
         async def compute(self, x: int) -> int: ...
 
     ac = AsyncCalc()
     ar: AsyncChainableResult[int] = ac.compute(5)
 
     class AsyncPipe:
-        @async_pipeline
+        @pipeline
         async def step(self, x: int) -> int: ...
 
     ap = AsyncPipe()

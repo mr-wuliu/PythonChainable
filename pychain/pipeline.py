@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import inspect
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Awaitable, Callable, TypeVar, overload
+from pychain.async_pipeline import AsyncPipelineResult
 from pychain.common import CommonChain
 from pychain.enum import VALUE, INSTANCE
 
@@ -52,9 +54,17 @@ class PipelineResult(CommonChain[T]):
         return self
 
 
-def pipeline(func: Callable[..., T]) -> Callable[..., PipelineResult[T]]:
+@overload
+def pipeline(func: Callable[..., Awaitable[T]]) -> Callable[..., AsyncPipelineResult[T]]: ...  # pyright: ignore[reportOverlappingOverload]
+
+@overload
+def pipeline(func: Callable[..., T]) -> Callable[..., PipelineResult[T]]: ...
+
+def pipeline(func: Callable[..., Any]) -> Callable[..., PipelineResult[Any] | AsyncPipelineResult[Any]]:
     @wraps(func)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> PipelineResult[T]:
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> PipelineResult[Any] | AsyncPipelineResult[Any]:
         result = func(self, *args, **kwargs)
+        if inspect.iscoroutine(result):
+            return AsyncPipelineResult(self, result)
         return PipelineResult(self, result)
     return wrapper
