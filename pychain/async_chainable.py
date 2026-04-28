@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from functools import wraps
 from typing import Any, Callable, TypeVar
 from pychain.common import CommonChain
@@ -35,7 +36,9 @@ class AsyncChainableResult(CommonChain[T]):
                         await value
                         inner = attr(*args, **kwargs)
                         inner_value = object.__getattribute__(inner, "_value")
-                        return await inner_value
+                        if inspect.isawaitable(inner_value):
+                            return await inner_value
+                        return inner_value
                     return AsyncChainableResult(instance, async_step())
                 return method_caller
             return attr

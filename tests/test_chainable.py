@@ -943,5 +943,91 @@ class TestClassBehavior(unittest.TestCase):
         self.assertEqual(result.__class__, Pipe)
 
 
+class TestMixedAsyncSyncChaining(unittest.TestCase):
+    """Regression tests for mixed async/sync chained method calls."""
+
+    def test_async_pipeline_then_sync_pipeline(self):
+        import asyncio
+
+        class MixedPipe:
+            @pipeline
+            async def start(self, x):
+                return x + 1
+
+            @pipeline
+            def double(self, x):
+                return x * 2
+
+        async def run():
+            pipe = MixedPipe()
+            val = await pipe.start(1).double()
+            self.assertEqual(val, 4)
+
+        asyncio.run(run())
+
+    def test_async_pipeline_then_sync_pipeline_with_args(self):
+        import asyncio
+
+        class MixedPipe:
+            @pipeline
+            async def start(self, x):
+                return x + 1
+
+            @pipeline
+            def multiply(self, x, factor):
+                return x * factor
+
+        async def run():
+            pipe = MixedPipe()
+            val = await pipe.start(3).multiply(factor=5)
+            self.assertEqual(val, 20)
+
+        asyncio.run(run())
+
+    def test_async_chainable_then_sync_chainable(self):
+        import asyncio
+
+        class MixedCalc:
+            @chainable
+            async def compute(self, x):
+                return x + 10
+
+            @chainable
+            def transform(self, x):
+                return x * 2
+
+        async def run():
+            calc = MixedCalc()
+            partial = calc.compute(5)
+            transformed = partial.transform(15)
+            val = await transformed
+            self.assertEqual(val, 30)
+
+        asyncio.run(run())
+
+    def test_sync_then_async_then_sync_pipeline(self):
+        import asyncio
+
+        class MultiPipe:
+            @pipeline
+            def step_one(self, x):
+                return x + 1
+
+            @pipeline
+            async def step_two(self, x):
+                return x * 3
+
+            @pipeline
+            def step_three(self, x):
+                return x - 2
+
+        async def run():
+            pipe = MultiPipe()
+            val = await pipe.step_one(4).step_two().step_three()
+            self.assertEqual(val, 13)
+
+        asyncio.run(run())
+
+
 if __name__ == "__main__":
     unittest.main()

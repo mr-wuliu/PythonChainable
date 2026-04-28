@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from functools import wraps
 from typing import Any, Callable, TypeVar
 from pychain.common import CommonChain
@@ -46,7 +47,9 @@ class AsyncPipelineResult(CommonChain[T]):
                     else:
                         inner = attr(resolved, *args, **kwargs)
                     inner_value = object.__getattribute__(inner, VALUE)
-                    return await inner_value
+                    if inspect.isawaitable(inner_value):
+                        return await inner_value
+                    return inner_value
 
                 return lambda *args, **kwargs: AsyncPipelineResult(
                     instance, make_step(value, *args, **kwargs)
